@@ -605,7 +605,8 @@ const A=window.A={sq:v=>{q=v;$('#at').innerHTML=arows();lab()},close:()=>$('#mo'
   for(let p=1;p<=n;p++){const w=ws.find(t=>t.p==p),op=ok.filter(t=>t.p==p),c=op.reduce((a,t)=>a+t.v,0),lun=ms.filter(m=>op.filter(t=>t.mid==m.id).reduce((a,t)=>a+t.v,0)>=iu).length;r.push([p,w?w.nama:'',w?w.tgl:'',w?(+w.hadiah||iu*ms.length):'',lun+'/'+ms.length,c,iu*ms.length])}
   dl('laporan-'+String(g.nama).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'.csv',r.map(a=>a.map(c=>{let t=String(c);if(/^[=+\-@\t\r]/.test(t))t="'"+t;return `"${t.replace(/"/g,'""')}"`}).join(',')).join('\n'),'text/csv')},
  bak:()=>dl('cadangan-arisan-'+iso(new Date())+'.json',JSON.stringify(D),'application/json'),
- out:async()=>{A.close();msg('Keluar…');try{await Promise.race([sb.auth.signOut({scope:'local'}),new Promise(r=>setTimeout(r,2500))])}catch(e){}try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));localStorage.removeItem('arisan_gid')}catch(e){}location.replace(location.pathname)}};
+ out:async()=>{A.close();msg('Keluar…');try{sessionStorage.setItem('arisan_out','1')}catch(e){}try{if(rt){sb.removeChannel(rt);rt=null}}catch(e){}try{await Promise.race([sb.auth.signOut({scope:'local'}),new Promise(r=>setTimeout(r,2500))])}catch(e){}wipeAuth();try{if('serviceWorker' in navigator){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}}catch(e){}location.replace(location.pathname+'?k='+Date.now())}};
+function wipeAuth(){try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));localStorage.removeItem('arisan_gid')}catch(e){}try{Object.keys(sessionStorage).filter(k=>k.startsWith('sb-')).forEach(k=>sessionStorage.removeItem(k))}catch(e){}try{if(indexedDB.databases)indexedDB.databases().then(l=>l.forEach(d=>{if(/^(sb-|supabase)/i.test(d.name||''))indexedDB.deleteDatabase(d.name)}))}catch(e){}}
 document.addEventListener('click',e=>{const a=e.target.closest('[data-go],[data-act]');if(!a)return;e.preventDefault();if(a.dataset.go)go(a.dataset.go);else if(A[a.dataset.act])A[a.dataset.act](a.dataset.id)});
 
 /* ===== Navigasi baru: pemilih arisan, menu lainnya, bantuan ===== */
@@ -760,7 +761,7 @@ async function boot(u){document.body.classList.remove('own');landed=false;seenK=
   if(PJ.status!='aktif'||!exp||exp<new Date())return showWait(exp);
   await load()}catch(e){showLogin(mapErr(e))}}
 let lastUid=null;
-sb.auth.onAuthStateChange((ev,ses)=>{if(ev=='PASSWORD_RECOVERY'){showNewPass();return}const u=ses?.user||null;if((u?.id||null)===lastUid&&ev!='INITIAL_SESSION')return;lastUid=u?.id||null;setTimeout(()=>boot(u),0)});
+sb.auth.onAuthStateChange((ev,ses)=>{if(ev=='PASSWORD_RECOVERY'){showNewPass();return}const u=ses?.user||null;let fo=false;try{fo=sessionStorage.getItem('arisan_out')=='1';if(fo)sessionStorage.removeItem('arisan_out')}catch(e){}if(fo&&ev=='INITIAL_SESSION'){wipeAuth();lastUid=null;setTimeout(()=>{showLogin();sb.auth.signOut({scope:'local'}).catch(()=>{})},0);return}if((u?.id||null)===lastUid&&ev!='INITIAL_SESSION')return;lastUid=u?.id||null;setTimeout(()=>boot(u),0)});
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
 </script>
 </body></html>
