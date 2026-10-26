@@ -605,7 +605,7 @@ const A=window.A={sq:v=>{q=v;$('#at').innerHTML=arows();lab()},close:()=>$('#mo'
   for(let p=1;p<=n;p++){const w=ws.find(t=>t.p==p),op=ok.filter(t=>t.p==p),c=op.reduce((a,t)=>a+t.v,0),lun=ms.filter(m=>op.filter(t=>t.mid==m.id).reduce((a,t)=>a+t.v,0)>=iu).length;r.push([p,w?w.nama:'',w?w.tgl:'',w?(+w.hadiah||iu*ms.length):'',lun+'/'+ms.length,c,iu*ms.length])}
   dl('laporan-'+String(g.nama).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')+'.csv',r.map(a=>a.map(c=>{let t=String(c);if(/^[=+\-@\t\r]/.test(t))t="'"+t;return `"${t.replace(/"/g,'""')}"`}).join(',')).join('\n'),'text/csv')},
  bak:()=>dl('cadangan-arisan-'+iso(new Date())+'.json',JSON.stringify(D),'application/json'),
- out:async()=>{await sb.auth.signOut();location.reload()}};
+ out:async()=>{A.close();msg('Keluar…');try{await Promise.race([sb.auth.signOut({scope:'local'}),new Promise(r=>setTimeout(r,2500))])}catch(e){}try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));localStorage.removeItem('arisan_gid')}catch(e){}location.replace(location.pathname)}};
 document.addEventListener('click',e=>{const a=e.target.closest('[data-go],[data-act]');if(!a)return;e.preventDefault();if(a.dataset.go)go(a.dataset.go);else if(A[a.dataset.act])A[a.dataset.act](a.dataset.id)});
 
 /* ===== Navigasi baru: pemilih arisan, menu lainnya, bantuan ===== */
