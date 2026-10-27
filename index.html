@@ -393,13 +393,13 @@ const donut=(seg,ct,sub)=>{const R=42,C=2*Math.PI*R,t=seg.reduce((a,s)=>a+s.v,0)
 const leg=seg=>`<div class="leg">${seg.map(s=>`<span><i style="background:${s.c}"></i>${s.l}<b>${s.v}</b></span>`).join('')}</div>`;
 const stBadge=x=>x.void?'<span class="status late">Dibatalkan</span>':x.st=='ok'?'<span class="status">Uang sudah masuk</span>':'<span class="status pending">Belum dicek</span>';
 let DUP=new Set();
-const dupSet=()=>{const c={};D.S.filter(x=>!x.void).forEach(x=>{const k=[x.mid,x.p,x.v,x.tgl].join('|');(c[k]=c[k]||[]).push(x.id)});const r=new Set();Object.values(c).forEach(a=>{if(a.length>1)a.forEach(i=>r.add(i))});return r};
+const dupSet=()=>{const c={};D.S.filter(x=>!x.void).forEach(x=>{const k=[x.mid,x.p,x.v,x.tgl].join('|');(c[k]=c[k]||[]).push(x.id)});const r=new Set(),iu=+D.g.iuran||0;Object.values(c).forEach(a=>{if(a.length>1){const f=D.S.find(t=>t.id==a[0]);if(iu>0&&f&&bayarP(f.mid,f.p)<=iu)return;a.forEach(i=>r.add(i))}});return r};
 const dupBadge=x=>!x.void&&DUP.has(x.id)?'<small style="display:block;margin-top:3px"><span class="status late">kemungkinan dobel</span></small>':'';
 const dupAl=()=>DUP.size?`<div class="alert" style="background:#fdecea;border-color:#f3c4bf;color:#b3261e"><span>⚠</span><span><b>${DUP.size} setoran kemungkinan dobel</b> (anggota, putaran, nominal, dan tanggal sama). Periksa tabel di bawah, lalu klik <b>Batalkan</b> pada yang dobel.</span></div>`:'';
 const lebihAl=()=>{const iu=+D.g.iuran||0;if(!iu)return'';const l=D.A.map(m=>({m,ex:lebihM(m.id)})).filter(x=>x.ex>0);if(!l.length)return'';return `<div class="alert" style="background:#fdecea;border-color:#f3c4bf;color:#b3261e"><span>⚠</span><span><b>${l.length} anggota membayar lebih dari iuran</b>: ${l.slice(0,5).map(x=>esc(x.m.nama)+' (lebih '+rp(x.ex)+')').join(', ')}${l.length>5?' dan lainnya':''}. Pilih tindakan: kembalikan uangnya, atau pindahkan ke putaran yang masih kurang.</span>${l.slice(0,3).map(x=>`<button class="secondary" data-act="lebih" data-id="${x.m.id}">Atur kelebihan ${esc(String(x.m.nama).split(' ')[0])}</button>`).join('')}</div>`};
 const tungAl=()=>{if(FM)return'';const l=D.A.map(m=>({m,t:tung(m)})).filter(x=>x.t.t>0);if(!l.length)return'';return `<div class="alert"><span>◔</span><span><b>${l.length} anggota belum lunas</b> sampai putaran ke-${pt()}: ${l.slice(0,6).map(x=>esc(x.m.nama)+' kurang '+rp(x.t.t)+' (putaran '+x.t.ps.join(', ')+')').join('; ')}${l.length>6?' dan lainnya':''}.</span></div>`};
 const kredit=(mid,p)=>{const iu=+D.g.iuran||0;let t=0;if(iu)for(let q=1;q<p;q++)t+=Math.max(0,bayarP(mid,q)-iu);return t};
-const cekDobel=(mid,p,vv,tgl)=>{const iu=+D.g.iuran||0,sudah=bayarP(mid,p),sama=D.S.some(x=>!x.void&&x.mid==mid&&x.p==p&&x.v==vv&&(!tgl||x.tgl==tgl));return sama?'sudah tercatat dengan nominal dan tanggal yang sama':''};
+const cekDobel=(mid,p,vv,tgl,cicil)=>{const iu=+D.g.iuran||0,sudah=bayarP(mid,p),sama=D.S.some(x=>!x.void&&x.mid==mid&&x.p==p&&x.v==vv&&(!tgl||x.tgl==tgl));if(sama&&cicil&&iu>0&&sudah+vv<=iu)return'';return sama?'sudah tercatat dengan nominal dan tanggal yang sama':''};
 const jmlP=()=>Math.max(D.A.length,kq(),1);
 const rencana=(mid,p,tot,wrap)=>{const iu=+D.g.iuran||0,mx=jmlP(),items=[],ord=[];let sisa=tot;
  for(let q=Math.max(1,p);q<=mx;q++)ord.push(q);if(wrap)for(let q=1;q<p&&q<=mx;q++)ord.push(q);
@@ -574,7 +574,7 @@ const A=window.A={sq:v=>{q=v;$('#at').innerHTML=arows();lab()},close:()=>$('#mo'
    if(!iu)return{ok:true,items:[{p:p0,v:t}],tot:t,cap};
    if(cap<=0)return{ok:false,h:esc(m.nama)+' sudah lunas semua '+jmlP()+' putaran, tidak ada yang perlu dibayar. Jika ini kelebihan yang sudah terlanjur diterima, kembalikan ke anggota.'};
    if(t>cap)return{ok:false,h:'Nominal melebihi sisa kewajiban '+esc(m.nama)+' ('+rp(cap)+'). Maksimal yang bisa dicatat '+rp(cap)+'. Kurangi nominalnya.'};
-   const items=rencana(mid,p0,t,true).items,tg2=$('#ct')?$('#ct').value:'',dz=items.find(it=>cekDobel(mid,it.p,it.v,tg2)),kk=D.K.find(x=>x.mid==mid&&+x.v==t);
+   const items=rencana(mid,p0,t,true).items,tg2=$('#ct')?$('#ct').value:'',dz=items.find(it=>cekDobel(mid,it.p,it.v,tg2,true)),kk=D.K.find(x=>x.mid==mid&&+x.v==t);
    if(dz)return{ok:false,h:'<b>Ditolak, sudah tercatat.</b> '+esc(m.nama)+' sudah punya setoran '+rp(dz.v)+' untuk putaran '+dz.p+' pada '+fd(tg2)+'. Kalau memang membayar lagi, ubah nominal atau tanggalnya.'};
    if(kk)return{ok:false,h:'<b>Ditolak, sudah ada bukti transfernya.</b> Bukti '+rp(kk.v)+' dari '+esc(m.nama)+' masih menunggu diperiksa. Terima lewat tombol Periksa &amp; verifikasi supaya tidak dobel.'};
    return{ok:true,items,tot:t,cap}},
