@@ -1,30 +1,40 @@
-/* Service worker sederhana: network-first untuk file milik sendiri.
-   Permintaan ke Supabase / CDN (beda origin) tidak disentuh sama sekali,
-   jadi data anggota tidak pernah disimpan di cache.
-   Cache disimpan tanpa query (?t=token) agar token anggota tidak menumpuk. */
+/* Service worker: network-first untuk file milik sendiri (satu origin).
+   Permintaan ke Supabase / CDN / font (beda origin) tidak disentuh,
+   dan halaman anggota ber-token tidak pernah disimpan di cache. */
 const V = 'arisan-v2';
-self.addEventListener('install', () => { self.skipWaiting(); });
+const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'supabase-config.js'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(V)
+      .then(c => Promise.allSettled(SHELL.map(u => c.add(u))))
+      .then(() => self.skipWaiting())
+  );
+});
+
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k))))
+    caches.keys()
+      .then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
+
 self.addEventListener('fetch', e => {
   const r = e.request;
   if (r.method !== 'GET') return;
   const u = new URL(r.url);
   if (u.origin !== location.origin) return;
-  const key = new Request(u.origin + u.pathname);
+  if (u.pathname.endsWith('anggota.html') || u.searchParams.has('t')) return; // jangan cache tautan ber-token
   e.respondWith(
     fetch(r).then(res => {
-      if (res.ok && res.status === 200 && res.type === 'basic') {
+      if (res.ok && res.status === 200) {
         const cp = res.clone();
-        caches.open(V).then(c => c.put(key, cp)).catch(() => {});
+        caches.open(V).then(c => c.put(r, cp)).catch(() => {});
       }
       return res;
     }).catch(() =>
-      caches.match(key).then(m => m || new Response(
+      caches.match(r).then(m => m || new Response(
         'Anda sedang offline. Hubungkan internet lalu muat ulang halaman.',
         { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
       ))
