@@ -1,8 +1,12 @@
 /* Service worker: network-first untuk file milik sendiri (satu origin).
    Permintaan ke Supabase / CDN / font (beda origin) tidak disentuh,
    dan halaman anggota ber-token tidak pernah disimpan di cache. */
-const V = 'arisan-v2';
-const SHELL = ['./', 'index.html', 'manifest.json', 'icon-192.png', 'supabase-config.js'];
+const V = 'arisan-v3';
+const SHELL = [
+  './', 'index.html', 'manifest.json', 'icon-192.png', 'supabase-config.js',
+  'logo-arisanku.webp', 'logo-bn-software.webp', 'ilustrasi-arisan.webp',
+  'ilustrasi/kosong-pemenang.svg', 'ilustrasi/kosong-siklus.svg', 'ilustrasi/semua-lunas.svg'
+];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -34,10 +38,12 @@ self.addEventListener('fetch', e => {
       }
       return res;
     }).catch(() =>
-      caches.match(r).then(m => m || new Response(
-        'Anda sedang offline. Hubungkan internet lalu muat ulang halaman.',
-        { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
-      ))
+      caches.match(r)
+        .then(m => m || (r.mode === 'navigate' ? caches.match('index.html') : null))
+        .then(m => m || new Response(
+          'Anda sedang offline. Hubungkan internet lalu muat ulang halaman.',
+          { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' } }
+        ))
     )
   );
 });
