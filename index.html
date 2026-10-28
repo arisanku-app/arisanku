@@ -48,7 +48,7 @@ button{font:inherit;cursor:pointer}[hidden]{display:none!important}
 .mo{display:none;position:fixed;inset:0;background:#0a1f1acc;z-index:50;align-items:center;justify-content:center;padding:16px}.mo.on{display:flex}
 .box{background:#fff;border-radius:20px;padding:22px;width:100%;max-width:440px;max-height:90vh;overflow:auto;box-shadow:0 30px 60px -20px #000a}.box h3{font:700 24px var(--serif);margin:0 0 14px}.box .actions{margin-top:14px}
 label{display:block;font-size:11px;color:var(--muted);margin-bottom:11px}input,select,textarea{display:block;width:100%;margin-top:5px;padding:10px;border:1px solid var(--line);border-radius:8px;font:inherit;color:var(--ink);background:#fff}
-input:focus,select:focus{outline:2px solid #0d5b4c55;border-color:var(--green)}input[type=color]{height:40px;padding:3px}
+input:focus,select:focus,textarea:focus{outline:2px solid #0d5b4c55;border-color:var(--green)}textarea{resize:vertical;min-height:84px}input[type=color]{height:40px;padding:3px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}.tools{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}.tools input,.tools select{margin:0;max-width:280px}
 .empty{padding:26px;text-align:center;color:var(--muted)}
 .empty .eart{display:block;width:100%;max-width:220px;height:auto;margin:0 auto 10px}.note{font-size:12px;color:var(--muted);line-height:1.6}.err{background:#fdecea;color:#b3261e;border-left:3px solid #c0392b;border-radius:8px;padding:10px 12px;font-size:12px;line-height:1.5;margin:0 0 14px;word-break:break-word}.okbox{background:#eaf5ed;color:#2c7a55;border-radius:8px;padding:10px 12px;font-size:12px;margin:0 0 14px}
@@ -314,6 +314,7 @@ const mapErr=e=>{const c=e?.code||'',m=String(e?.message||e||'');
  if(c=='user_already_exists'||/already registered/i.test(m))return'Email ini sudah terdaftar. Silakan masuk.';
  if(c=='weak_password'||/at least \d+ char/i.test(m))return'Kata sandi terlalu lemah (minimal 8 karakter).';
  if(/rate_limit|too many/i.test(c+m))return'Terlalu banyak percobaan. Tunggu beberapa menit lalu coba lagi.';
+ if(c=='23505'||/duplicate key/i.test(m))return'Data ini sudah tercatat (kemungkinan terklik dua kali). Muat ulang halaman untuk melihat hasilnya.';
  if(/Failed to fetch|NetworkError/i.test(m))return'Koneksi bermasalah. Periksa internet Anda.';
  if(c=='signup_disabled')return'Pendaftaran akun baru dinonaktifkan.';
  if(c=='42501'||/row-level security|permission denied/i.test(m))return'Akses ditolak. Masa aktif akun mungkin berakhir.';
@@ -382,10 +383,10 @@ async function load(){
 
 /* Salinan data tiap anggota untuk halaman anggota.html (tanpa login, dibuka lewat token acak) */
 async function syncPortal(){if(!D.g)return;const g=D.g,w=PCLR[pkey(g)]||'#0d5b4c',p=pt();
- const und=D.W.map(x=>({p:x.p,nama:x.nama,tgl:x.tgl}));const arr=[];
+ const und=D.W.map(x=>({p:x.p,nama:x.nama,tgl:x.tgl,mid:x.mid}));const arr=[];
  for(const m of D.A){const kr=(ALL.KT||[]).filter(x=>x.gid==GID&&x.mid==m.id&&(x.status=='baru'||(x.status=='ditolak'&&Date.now()-new Date(x.at||0)<14*864e5))).map(x=>({p,v:x.v,tgl:x.tgl||'',m:x.m,st:x.status=='baru'?'kirim':'tolak',...(x.status=='ditolak'&&x.alasan?{al:String(x.alasan).slice(0,200)}:{})})),
   bayar=D.S.filter(x=>x.mid==m.id&&!x.void).map(x=>({p:x.p,v:x.v,tgl:x.tgl,m:x.m,st:x.st})).concat(kr).sort((x,y)=>String(y.tgl).localeCompare(String(x.tgl))).slice(0,60),mw=menang(m.id);
-  arr.push({token:m.token,owner:U.uid,gid:GID,mid:m.id,nama:m.nama,grup:g.nama,warna:w,rek:g.rek||'',wa:g.wa||'',iuran:+g.iuran||0,periode:g.periode||'bulanan',logo:LOGO(),putaran:p,jml:D.A.length,pot:pot(),menang:mw?mw.p:null,bayar,undian:und,upd:new Date().toISOString()});
+  arr.push({token:m.token,owner:U.uid,gid:GID,mid:m.id,nama:m.nama,grup:g.nama,warna:w,rek:g.rek||'',wa:g.wa||'',iuran:+g.iuran||0,periode:g.periode||'bulanan',logo:LOGO(),putaran:p,jml:D.A.length,pot:pot(),menang:mw?mw.p:null,bayar,undian:und.map(({mid,...r})=>({...r,me:mid==m.id?1:0})),upd:new Date().toISOString()});
   }
  const up=a=>sbo(sb.from('portal').upsert(a,{onConflict:'token'}));
  for(let i=0;i<arr.length;i+=200){const ch=arr.slice(i,i+200);try{await up(ch)}catch(e){if(/logo|PGRST204|schema cache/i.test((e.code||'')+' '+(e.message||''))){await up(ch.map(({logo,...r})=>r))}else throw e}}}
@@ -583,7 +584,7 @@ const go=v=>{cur=v;if(pendK){pendK=false;load().then(()=>syncPortal()).catch(()=
 function lab(){document.querySelectorAll('table').forEach(t=>{const h=[...t.querySelectorAll('thead th')].map(x=>x.textContent.trim());t.querySelectorAll('tbody tr').forEach(tr=>[...tr.children].forEach((td,i)=>{if(td.tagName=='TD')td.setAttribute('data-label',h[i]||'')}))})}
 
 /* ===== Form generik ===== */
-function form(title,fs,cb,intro){$('#mo').innerHTML=`<div class="box"><h3>${title}</h3>${intro?`<p class="intro">${intro}</p>`:''}<form id="f">${fs.map(f=>`<label>${f.l}${f.r?'<span class="req"> *</span>':''}${f.o?`<select name="${f.k}">${f.o.map(o=>`<option value="${esc(o[0])}" ${String(o[0])==String(f.v)?'selected':''}>${esc(o[1])}</option>`).join('')}</select>`:f.ta?`<textarea name="${f.k}" rows="3" maxlength="${f.ta}" ${f.mn?`minlength="${f.mn}"`:''} ${f.r?'required':''} ${f.ph?`placeholder="${esc(f.ph)}"`:''}>${esc(f.v??'')}</textarea>`:`<input name="${f.k}" type="${f.t||'text'}" value="${esc(f.v??'')}" ${f.t=='number'?'min="0" step="any" inputmode="numeric"':''} ${f.t=='tel'?'inputmode="tel"':''} ${f.r?'required':''} ${f.ph?`placeholder="${esc(f.ph)}"`:''} ${f.a?`accept="${f.a}"`:''}>`}${f.h?`<span class="hint">${f.h}</span>`:''}</label>`).join('')}<div class="actions"><button type="button" class="secondary" data-act="close">Batal</button><button class="primary">Simpan</button></div></form></div>`;$('#mo').classList.add('on');
+function form(title,fs,cb,intro){$('#mo').innerHTML=`<div class="box"><h3>${esc(title)}</h3>${intro?`<p class="intro">${intro}</p>`:''}<form id="f">${fs.map(f=>`<label>${f.l}${f.r?'<span class="req"> *</span>':''}${f.o?`<select name="${f.k}">${f.o.map(o=>`<option value="${esc(o[0])}" ${String(o[0])==String(f.v)?'selected':''}>${esc(o[1])}</option>`).join('')}</select>`:f.ta?`<textarea name="${f.k}" rows="3" maxlength="${f.ta}" ${f.mn?`minlength="${f.mn}"`:''} ${f.r?'required':''} ${f.ph?`placeholder="${esc(f.ph)}"`:''}>${esc(f.v??'')}</textarea>`:`<input name="${f.k}" type="${f.t||'text'}" value="${esc(f.v??'')}" ${f.t=='number'?'min="0" step="any" inputmode="numeric"':''} ${f.t=='tel'?'inputmode="tel"':''} ${f.r?'required':''} ${f.ph?`placeholder="${esc(f.ph)}"`:''} ${f.a?`accept="${f.a}"`:''}>`}${f.h?`<span class="hint">${f.h}</span>`:''}</label>`).join('')}<div class="actions"><button type="button" class="secondary" data-act="close">Batal</button><button class="primary">Simpan</button></div></form></div>`;$('#mo').classList.add('on');
  $('#f').querySelectorAll('textarea').forEach(i=>{i.oninvalid=()=>i.setCustomValidity(i.validity.valueMissing?'Wajib diisi':'Isi minimal '+i.minLength+' huruf');i.oninput=()=>i.setCustomValidity('')});
  $('#f').onsubmit=e=>{e.preventDefault();const v=Object.fromEntries(new FormData(e.target));A.close();cb(v)}}
 const dl=(name,txt,type)=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['﻿'+txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000)};
@@ -746,7 +747,7 @@ ${mv>0?`<div class="reco" style="margin:0 0 10px"><b>Pindahkan ke putaran yang m
  bak:()=>dl('cadangan-arisan-'+iso(new Date())+'.json',JSON.stringify(D),'application/json'),
  out:async()=>{A.close();msg('Keluar…');try{sessionStorage.setItem('arisan_out','1')}catch(e){}try{if(rt){sb.removeChannel(rt);rt=null}}catch(e){}try{await Promise.race([sb.auth.signOut({scope:'local'}),new Promise(r=>setTimeout(r,2500))])}catch(e){}wipeAuth();try{if('serviceWorker' in navigator){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()))}if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}}catch(e){}location.replace(location.pathname+'?k='+Date.now())}};
 function wipeAuth(){try{Object.keys(localStorage).filter(k=>k.startsWith('sb-')).forEach(k=>localStorage.removeItem(k));localStorage.removeItem('arisan_gid')}catch(e){}try{Object.keys(sessionStorage).filter(k=>k.startsWith('sb-')).forEach(k=>sessionStorage.removeItem(k))}catch(e){}try{if(indexedDB.databases)indexedDB.databases().then(l=>l.forEach(d=>{if(/^(sb-|supabase)/i.test(d.name||''))indexedDB.deleteDatabase(d.name)}))}catch(e){}}
-document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const m=$('#mo'),k=$('#kf');if(m&&m.classList.contains('on')&&!(k&&k.classList.contains('on'))&&!m.querySelector('form'))A.close()});
+document.addEventListener('keydown',e=>{if(e.key!=='Escape')return;const m=$('#mo'),k=$('#kf');if(m&&m.classList.contains('on')&&!(k&&k.classList.contains('on')))A.close()});
 document.addEventListener('click',e=>{const a=e.target.closest('[data-go],[data-act]');if(!a)return;e.preventDefault();if(a.dataset.go)go(a.dataset.go);else if(A[a.dataset.act])A[a.dataset.act](a.dataset.id)});
 
 /* ===== Navigasi baru: pemilih arisan, menu lainnya, bantuan ===== */
