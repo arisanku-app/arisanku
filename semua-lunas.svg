@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 260" width="320" height="260">
+<defs><linearGradient id="gold" x2="0" y2="1"><stop stop-color="#ffd66b"/><stop offset="1" stop-color="#ff9f16"/></linearGradient><linearGradient id="blue" x2="0" y2="1"><stop stop-color="#3c9bff"/><stop offset="1" stop-color="#0750c8"/></linearGradient></defs>
+<rect width="320" height="260" rx="22" fill="#fff"/>
+<circle cx="160" cy="113" r="80" fill="#edf6ff"/>
+<g stroke="#d88b12" stroke-width="2">
+<ellipse cx="139" cy="161" rx="49" ry="14" fill="url(#gold)"/>
+<rect x="90" y="139" width="98" height="22" rx="5" fill="url(#gold)"/>
+<ellipse cx="139" cy="139" rx="49" ry="14" fill="#ffe39a"/>
+<ellipse cx="139" cy="132" rx="43" ry="12" fill="url(#gold)"/>
+<rect x="96" y="109" width="86" height="23" rx="5" fill="url(#gold)"/>
+<ellipse cx="139" cy="109" rx="43" ry="12" fill="#ffe39a"/>
+<ellipse cx="139" cy="102" rx="36" ry="10" fill="url(#gold)"/>
+</g>
+<circle cx="197" cy="89" r="37" fill="#d9f8e8" stroke="#fff" stroke-width="5"/>
+<circle cx="197" cy="89" r="29" fill="#22b573"/>
+<path d="M182 89l10 10 21-23" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<g fill="#ffad1f"><path d="M65 72l7-13 7 13z"/><circle cx="245" cy="134" r="4"/><path d="M222 43l4-10 4 10z"/><circle cx="83" cy="118" r="3"/></g>
+<g stroke="#ff9f16" stroke-width="4" stroke-linecap="round"><path d="M75 93l-9 3M239 57l9-5M229 154l8 5M91 47l-3-8"/></g>
+<text x="160" y="217" font-family="Arial,sans-serif" font-size="23" font-weight="700" text-anchor="middle" fill="#0750c8">Semua lunas!</text>
+<text x="160" y="240" font-family="Arial,sans-serif" font-size="14" font-weight="600" text-anchor="middle" fill="#2676df">Tidak ada yang menunggak</text>
+</svg>
